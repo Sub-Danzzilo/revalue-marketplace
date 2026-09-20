@@ -1,95 +1,142 @@
-# REVALUE — Marketplace & Pengelolaan Sampah Terintegrasi
+# REVALUE
 
-REVALUE adalah platform berbasis web yang menghubungkan masyarakat, pengepul/bank sampah, industri daur ulang, dan pengolah kompos untuk menciptakan ekosistem pengelolaan sampah yang terintegrasi, transparan, dan mendukung ekonomi sirkular.
+REVALUE adalah platform berbasis web yang menghubungkan masyarakat, pengepul atau bank sampah, industri daur ulang, dan pengolah kompos untuk menciptakan ekosistem pengelolaan sampah yang lebih terintegrasi, transparan, dan berkelanjutan.
 
 ---
 
-## 🛠️ Stack Teknologi & Library
+## Status Proyek
 
-Proyek ini dibangun menggunakan arsitektur modern **React.js** (Frontend) dan **Express.js** (Backend).
+Saat ini, repository ini berfokus pada frontend React + Vite. Backend dan koneksi database MySQL/Aiven dapat dikembangkan secara terpisah sesuai arsitektur yang dibutuhkan.
+
+---
+
+## Stack Teknologi
 
 ### Frontend
 
-- **React.js** (Vite) — Core UI Library
-- **React-Leaflet / Leaflet.js** — Peta interaktif peta lokasi titik *drop-off*
-- **Chart.js / React-Chartjs-2** — Visualisasi data analitik & dampak karbon
-- **Lucide React** — Icon set UI
+- React.js
+- Vite
+- JavaScript
+- CSS
 
-### Backend & Database
+### Backend / Database Planning
 
-- **Node.js & Express.js** — Web Framework & REST API
-- **Prisma ORM (v6)** — Database Toolkit & Migration Management
-- **Aiven Cloud MySQL** — Managed Cloud Database Server
-- **CORS** — Middleware Cross-Origin Resource Sharing
-- **Dotenv** — Pengelolaan variabel lingkungan (.env)
-- **Nodemon** *(Dev)* — Auto-reload server saat pengembangan
+- Node.js
+- Express.js (opsional / dapat dibuat terpisah)
+- Prisma ORM
+- MySQL di Aiven
+- Dotenv
+
+> Prisma dan MySQL sebaiknya digunakan di backend, bukan langsung dari frontend React.
 
 ---
 
-## 🚀 Panduan Setup & Instalasi (Untuk Tim Developer)
+## Cara Menjalankan Proyek
 
-Ikuti langkah-langkah di bawah ini untuk menjalankan proyek di komputer lokal kamu:
-
-### 1. Clone Repository
+### 1. Clone repository
 
 ```bash
 git clone git@github.com:Sub-Danzzilo/revalue-marketplace.git
 cd revalue-marketplace
 ```
 
-### 2. Install Dependencies
-
-Jalankan perintah ini untuk menginstal seluruh paket pendukung frontend dan backend:
+### 2. Install dependency
 
 ```bash
 npm install
-
 ```
 
-### 3. Konfigurasi Variable Environment (`.env`)
-
-Buat file bernama `.env` di root folder proyek (sejajar dengan `package.json`), lalu isi dengan konfigurasi berikut:
-
-```env
-PORT=5000
-DATABASE_URL="mysql://username:password@host-aiven-cloud.com:11787/defaultdb"
-
-```
-
-*> **Note:** Hubungi Muhammad Riski untuk mendapatkan kredensial string `DATABASE_URL` Aiven MySQL yang valid.*
-
-### 4. Sinkronisasi Database (Prisma ORM)
-
-Setelah file `.env` terisi, jalankan perintah ini untuk melakukan sinkronisasi skema database ke Prisma Client lokal kamu:
+### 3. Jalankan frontend di mode development
 
 ```bash
-npx prisma generate
-
-```
-
-Jika ada perubahan skema database baru dari tim backend, perbarui database lokal dengan perintah:
-
-```bash
-npx prisma migrate dev
-
-```
-
-### 5. Jalankan Aplikasi
-
-Jalankan server pengembangan (Frontend & Backend):
-
-```bash
-# Jalankan Backend Express
 npm run dev
+```
 
-# Membuka Database GUI (Prisma Studio)
-npx prisma studio
+Aplikasi akan berjalan di browser pada port default Vite, biasanya:
 
+```text
+http://localhost:5173
+```
+
+### 4. Build untuk production
+
+```bash
+npm run build
+```
+
+### 5. Cek kualitas kode
+
+```bash
+npm run lint
 ```
 
 ---
 
-## 👥 Tim Pengembang
+## Konfigurasi Environment
 
-- **Muhammad Riski** - Backend
-- **Charis Philip Wibowo** - Frontend
+Buat file `.env` di root project jika nanti backend atau database digunakan.
+
+Contoh:
+
+```env
+PORT=5000
+DATABASE_URL="mysql://username:password@host-aiven:port/defaultdb"
+```
+
+Catatan:
+
+- `DATABASE_URL` digunakan untuk koneksi backend ke MySQL Aiven.
+- Jangan menaruh koneksi database langsung di frontend.
+- Gunakan variabel environment untuk backend saja.
+- Minta file `.env` ke Muhammad Riski, karena isi `.env` diatas cuma contoh.
+
+---
+
+## Prisma + MySQL Aiven
+
+Jika backend akan memakai Prisma, langkah umum adalah:
+
+```bash
+npx prisma init
+npx prisma generate
+npx prisma db push
+```
+
+Untuk migrasi yang lebih rapi:
+
+```bash
+npx prisma migrate dev --name init_revalue_schema
+```
+
+Gunakan Prisma di backend, lalu frontend memanggil backend via API.
+
+---
+
+## Struktur Project yang Disarankan
+
+```text
+REVALUE/
+├── src/
+├── public/
+├── package.json
+├── vite.config.js
+├── .env
+├── prisma/
+│   └── schema.prisma
+├── server/
+│   └── app.js
+└── README.md
+```
+
+---
+
+## Tim Pengembang
+
+- Muhammad Riski - Backend
+- Charis Philip Wibowo - Frontend
+
+---
+
+## Catatan
+
+README ini dibuat agar sesuai dengan kondisi repo yang saat ini ada: fokus frontend React/Vite, sementara Prisma dan MySQL/Aiven merupakan infrastruktur backend yang dapat ditambahkan sesuai kebutuhan ekosistem REVALUE.
