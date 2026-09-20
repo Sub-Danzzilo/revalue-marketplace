@@ -1,0 +1,126 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. ENUM ROLES
+enum Role {
+  masyarakat
+  pengepul
+  industri
+  admin
+}
+
+// 2. ENUM STATUS TRANSAKSI
+enum TransactionStatus {
+  pending
+  diproses
+  penjemputan
+  selesai
+  ditolak
+}
+
+// 3. ENUM STATUS REQUEST INDUSTRI
+enum RequestStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+}
+
+// 4. ENUM KATEGORI SAMPAH
+enum WasteCategory {
+  organik
+  anorganik
+}
+
+// ==========================================
+// MODEL / TABEL
+// ==========================================
+
+model User {
+  userId        Int      @id @default(autoincrement()) @map("user_id")
+  name          String   @db.VarChar(100)
+  email         String   @unique @db.VarChar(100)
+  passwordHash  String   @map("password_hash") @db.VarChar(255)
+  role          Role     @default(masyarakat)
+  isVerified    Boolean  @default(false) @map("is_verified")
+  walletBalance Decimal  @default(0.00) @map("wallet_balance") @db.Decimal(12, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relasi
+  sentTransactions     Transaction[]     @relation("SenderRelation")
+  receivedTransactions Transaction[]     @relation("ReceiverRelation")
+  dropOffLocations     DropOffLocation[]
+  industryRequests     IndustryRequest[]
+
+  @@map("users")
+}
+
+model WasteItem {
+  wasteId           Int           @id @default(autoincrement()) @map("waste_id")
+  typeName          String        @map("type_name") @db.VarChar(50)
+  category          WasteCategory
+  pricePerKg        Decimal       @map("price_per_kg") @db.Decimal(10, 2)
+  stockKg           Decimal       @default(0.00) @map("stock_kg") @db.Decimal(10, 2)
+  carbonFactorPerKg Decimal       @map("carbon_factor_per_kg") @db.Decimal(5, 2)
+
+  // Relasi
+  transactions     Transaction[]
+  industryRequests IndustryRequest[]
+
+  @@map("waste_items")
+}
+
+model DropOffLocation {
+  locationId   Int     @id @default(autoincrement()) @map("location_id")
+  pengepulId   Int     @map("pengepul_id")
+  locationName String  @map("location_name") @db.VarChar(150)
+  address      String  @db.Text
+  latitude     Decimal @db.Decimal(10, 8)
+  longitude    Decimal @db.Decimal(11, 8)
+
+  // Relasi FK ke Users (Disamakan: ON DELETE CASCADE, ON UPDATE RESTRICT)
+  pengepul User @relation(fields: [pengepulId], references: [userId], onDelete: Cascade, onUpdate: Restrict)
+
+  @@map("drop_off_locations")
+}
+
+model Transaction {
+  transactionId       Int               @id @default(autoincrement()) @map("transaction_id")
+  transactionCode     String            @unique @map("transaction_code") @db.VarChar(50)
+  senderId            Int               @map("sender_id")
+  receiverId          Int               @map("receiver_id")
+  wasteId             Int               @map("waste_id")
+  weightKg            Decimal           @map("weight_kg") @db.Decimal(8, 2)
+  totalAmount         Decimal           @map("total_amount") @db.Decimal(12, 2)
+  status              TransactionStatus @default(pending)
+  notificationMessage String?           @map("notification_message") @db.Text
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  // Relasi FK (Disamakan: ON DELETE RESTRICT, ON UPDATE RESTRICT)
+  sender   User      @relation("SenderRelation", fields: [senderId], references: [userId], onDelete: Restrict, onUpdate: Restrict)
+  receiver User      @relation("ReceiverRelation", fields: [receiverId], references: [userId], onDelete: Restrict, onUpdate: Restrict)
+  waste    WasteItem @relation(fields: [wasteId], references: [wasteId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@map("transactions")
+}
+
+model IndustryRequest {
+  requestId        Int           @id @default(autoincrement()) @map("request_id")
+  industriId       Int           @map("industri_id")
+  wasteId          Int           @map("waste_id")
+  requiredWeightKg Decimal       @map("required_weight_kg") @db.Decimal(10, 2)
+  status           RequestStatus @default(pending)
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  // Relasi FK (Disamakan: ON DELETE RESTRICT, ON UPDATE RESTRICT)
+  industri User      @relation(fields: [industriId], references: [userId], onDelete: Restrict, onUpdate: Restrict)
+  waste    WasteItem @relation(fields: [wasteId], references: [wasteId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@map("industry_requests")
+}
