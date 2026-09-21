@@ -7,10 +7,11 @@ import 'dotenv/config';
 const prisma = new PrismaClient();
 const sessions = new Map();
 const port = Number(process.env.API_PORT || 3001);
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
 const send = (response, status, body, extraHeaders = {}) => {
   response.writeHead(status, {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': 'http://localhost:5173',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     ...extraHeaders,
@@ -46,7 +47,7 @@ const readBody = async (request) => {
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
     response.writeHead(204, {
-      'Access-Control-Allow-Origin': 'http://localhost:5173',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     });
