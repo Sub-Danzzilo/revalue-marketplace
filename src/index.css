@@ -649,6 +649,50 @@ button {
   border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
+.dropoff-map {
+  position: relative;
+  z-index: 0;
+  height: 430px;
+  overflow: hidden;
+  border: 1px solid rgba(24, 51, 45, 0.12);
+  border-radius: 8px 28px 8px 28px;
+  box-shadow: 0 16px 30px rgba(24, 63, 53, 0.08);
+}
+
+.dropoff-map .leaflet-container {
+  min-height: 100%;
+  font-family: inherit;
+}
+
+.map-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 170px;
+  color: #18332d;
+}
+
+.map-popup strong {
+  font-size: 0.82rem;
+}
+
+.map-popup span {
+  color: #60766c;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.map-popup a {
+  color: #23795f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.map-popup a:hover {
+  text-decoration: underline;
+}
+
 .map-grid {
   position: absolute;
   inset: 0;
@@ -1025,6 +1069,10 @@ button {
 
   .map-panel {
     height: 260px;
+  }
+
+  .dropoff-map {
+    height: 320px;
   }
 
   .chart-box {

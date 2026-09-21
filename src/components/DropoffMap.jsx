@@ -14,20 +14,17 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-export default function DropoffMap() {
-  // Contoh data titik drop-off dari tabel database Prisma (drop_off_locations)
-  const dropoffLocations = [
-    { id: 1, name: "Bank Sampah Berkah Sidoarjo", lat: -7.4478, lng: 112.7183, type: "Pengepul Anorganik", address: "Jl. Pahlawan No. 12, Sidoarjo" },
-    { id: 2, name: "Rumah Kompos Unesa", lat: -7.3122, lng: 112.7190, type: "Pengolah Organik", address: "Kampus Unesa Ketintang, Surabaya" },
-    { id: 3, name: "Drop-Off Unit Sejahtera", lat: -7.4200, lng: 112.7000, type: "Pengepul Umum", address: "Jl. Gajah Mada, Sidoarjo" }
-  ];
-
-  // Koordinat pusat peta (Area Sidoarjo / Surabaya)
-  const centerPosition = [-7.3756, 112.7164];
+export default function DropoffMap({ locations = [] }) {
+  const validLocations = locations.filter((location) => (
+    Number.isFinite(Number(location.latitude)) && Number.isFinite(Number(location.longitude))
+  ));
+  const centerPosition = validLocations.length > 0
+    ? [Number(validLocations[0].latitude), Number(validLocations[0].longitude)]
+    : [-7.3756, 112.7164];
 
   return (
-    <div className="w-full h-[450px] rounded-xl overflow-hidden shadow-sm border border-gray-200 z-0">
-      <MapContainer center={centerPosition} zoom={12} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+    <div className="dropoff-map">
+      <MapContainer center={centerPosition} zoom={12} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
         {/* Layer Peta OpenStreetMap */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -35,19 +32,15 @@ export default function DropoffMap() {
         />
         
         {/* Looping Marker Berdasarkan Data Drop-Off */}
-        {dropoffLocations.map((loc) => (
-          <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+        {validLocations.map((loc) => (
+          <Marker key={loc.id} position={[Number(loc.latitude), Number(loc.longitude)]}>
             <Popup>
-              <div className="p-1">
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">{loc.type}</span>
-                <h4 className="font-bold text-gray-800 text-sm mt-1">{loc.name}</h4>
-                <p className="text-xs text-gray-600 mt-0.5">{loc.address}</p>
-                <button 
-                  onClick={() => alert(`Memilih rute ke ${loc.name}`)}
-                  className="mt-2 bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700 transition-colors"
-                >
-                  Pilih Lokasi Ini
-                </button>
+              <div className="map-popup">
+                <strong>{loc.name}</strong>
+                <span>{loc.address}</span>
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${loc.latitude},${loc.longitude}`} target="_blank" rel="noreferrer">
+                  Buka rute
+                </a>
               </div>
             </Popup>
           </Marker>

@@ -135,6 +135,7 @@ const server = createServer(async (request, response) => {
         id: location.locationId,
         name: location.locationName,
         address: location.address,
+        type: /kompos/i.test(`${location.locationName} ${location.address}`) ? 'kompos' : 'bahan',
         latitude: serializeNumber(location.latitude),
         longitude: serializeNumber(location.longitude),
         x: `${maxLng === minLng ? 50 : ((serializeNumber(location.longitude) - minLng) / (maxLng - minLng)) * 80 + 10}%`,

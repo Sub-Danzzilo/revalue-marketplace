@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import './index.css';
 import logo from './assets/Revalue-logo.jpeg';
+import DropoffMap from './components/DropoffMap';
 
 const currency = (value) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
@@ -24,6 +25,7 @@ export default function App() {
   const [catalog, setCatalog] = useState([]);
   const [products, setProducts] = useState([]);
   const [dropoffLocations, setDropoffLocations] = useState([]);
+  const [mapFilter, setMapFilter] = useState('all');
   const [dashboardStats, setDashboardStats] = useState([]);
   const [impact, setImpact] = useState({ carbonAvoidedKg: 0, equivalentTrees: 0, landfillReductionKg: 0 });
   const [selectedWaste, setSelectedWaste] = useState(null);
@@ -83,6 +85,10 @@ export default function App() {
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
     [cart]
   );
+
+  const visibleDropoffs = dropoffLocations.filter((location) => (
+    mapFilter === 'all' || location.type === mapFilter
+  ));
 
   const addToCart = (product) => {
     setCart((prev) => {
@@ -334,22 +340,16 @@ export default function App() {
 
       <main className="map-page">
         <div className="map-toolbar">
-          <button type="button" className="chip active">Daur Ulang</button>
-          <button type="button" className="chip">Kompos</button>
-          <button type="button" className="chip">Bahan</button>
+          <h4>Filter</h4>
+          <button type="button" className={`chip ${mapFilter === 'all' ? 'active' : ''}`} onClick={() => setMapFilter('all')}>Daur Ulang</button>
+          <button type="button" className={`chip ${mapFilter === 'kompos' ? 'active' : ''}`} onClick={() => setMapFilter('kompos')}>Kompos</button>
+          <button type="button" className={`chip ${mapFilter === 'bahan' ? 'active' : ''}`} onClick={() => setMapFilter('bahan')}>Bahan</button>
         </div>
 
-        <div className="map-panel">
-          <div className="map-grid" />
-          {dropoffLocations.map((loc) => (
-            <div key={loc.name} className="map-dot" style={{ left: loc.x, top: loc.y }}>
-              <span />
-            </div>
-          ))}
-        </div>
+        <DropoffMap locations={visibleDropoffs} />
 
         <div className="location-list">
-          {dropoffLocations.map((loc, index) => (
+          {visibleDropoffs.length === 0 ? <div className="empty-box">Belum ada lokasi untuk kategori ini.</div> : visibleDropoffs.map((loc, index) => (
             <div key={loc.name} className="location-row">
               <div className="location-icon"><MapPin size={12} /></div>
               <div>
