@@ -45,6 +45,7 @@ const dropoffLocations = [
 
 const currency = (value) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -63,7 +64,7 @@ export default function App() {
     const token = localStorage.getItem('revalue_token');
     if (!token) return;
 
-    fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiUrl}/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Profil gagal dimuat.');
@@ -129,8 +130,8 @@ export default function App() {
     event.preventDefault();
     setAuthMessage('Memproses...');
     try {
-      const endpoint = authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
-      const response = await fetch(endpoint, {
+      const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm),
