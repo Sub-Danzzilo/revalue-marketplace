@@ -1,5 +1,4 @@
-import React from 'react';
-import { Recycle, MapPin, ShoppingBag, User, Wallet, Bell, Search } from 'lucide-react';
+import { Recycle, Wallet, Bell } from 'lucide-react';
 
 export default function Navbar({ setActiveTab, activeTab, saldo }) {
   return (

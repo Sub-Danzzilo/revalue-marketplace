@@ -7,8 +7,14 @@ import 'dotenv/config';
 const prisma = new PrismaClient();
 const sessions = new Map();
 const port = Number(process.env.API_PORT || 3001);
-const send = (response, status, body) => {
-  response.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'http://localhost:5173' });
+const send = (response, status, body, extraHeaders = {}) => {
+  response.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': 'http://localhost:5173',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    ...extraHeaders,
+  });
   response.end(JSON.stringify(body));
 };
 const hashPassword = (password, salt = randomBytes(16).toString('hex')) => `${salt}:${scryptSync(password, salt, 64).toString('hex')}`;
@@ -39,11 +45,27 @@ const readBody = async (request) => {
 
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
-    response.writeHead(204, { 'Access-Control-Allow-Origin': 'http://localhost:5173', 'Access-Control-Allow-Headers': 'Content-Type' });
+    response.writeHead(204, {
+      'Access-Control-Allow-Origin': 'http://localhost:5173',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    });
     response.end();
     return;
   }
   try {
+    if (request.method === 'GET' && (request.url === '/' || request.url === '/api' || request.url === '/api/health')) {
+      return send(response, 200, {
+        status: 'ok',
+        message: 'Revalue API aktif.',
+        endpoints: {
+          health: 'GET /api/health',
+          register: 'POST /api/auth/register',
+          login: 'POST /api/auth/login',
+          me: 'GET /api/me',
+        },
+      });
+    }
     if (request.method === 'POST' && request.url === '/api/auth/register') {
       const { name, email, password } = await readBody(request);
       if (!name || !email || !password || password.length < 6) return send(response, 400, { message: 'Nama, email, dan password minimal 6 karakter wajib diisi.' });
