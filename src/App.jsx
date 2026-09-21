@@ -13,36 +13,6 @@ import {
 import './index.css';
 import logo from './assets/Revalue-logo.jpeg';
 
-const dashboardStats = [
-  { label: 'Organik', value: 70, tone: 'emerald' },
-  { label: 'Anorganik', value: 52, tone: 'sky' },
-  { label: 'B3', value: 30, tone: 'amber' },
-  { label: 'Total', value: 90, tone: 'teal' },
-];
-
-const wasteCatalog = [
-  { id: 1, category: 'Anorganik', name: 'Plastik PET', price: 3500, unit: 'kg' },
-  { id: 2, category: 'Organik', name: 'Sampah Dapur', price: 1000, unit: 'kg' },
-  { id: 3, category: 'B3 Medis', name: 'Limbah Masker', price: 0, unit: 'SOP' },
-  { id: 4, category: 'Logam', name: 'Kaleng Alumunium', price: 5500, unit: 'kg' },
-];
-
-const productCards = [
-  { id: 1, name: 'Kompos Premium REVALUE', price: 25000, tag: 'Popular', tone: 'green' },
-  { id: 2, name: 'Kompos Semai', price: 12500, tag: 'New', tone: 'dark' },
-  { id: 3, name: 'Pupuk Cair', price: 18000, tag: 'Best', tone: 'amber' },
-  { id: 4, name: 'Kompos Buah', price: 22000, tag: 'Hot', tone: 'teal' },
-];
-
-const dropoffLocations = [
-  { name: 'Pusat Daur Ulang', x: '32%', y: '44%' },
-  { name: 'Unit Kompos', x: '54%', y: '48%' },
-  { name: 'RS 3', x: '68%', y: '62%' },
-  { name: 'Bank Sampah', x: '72%', y: '28%' },
-  { name: 'Pengepul', x: '24%', y: '30%' },
-  { name: 'Kota Baru', x: '46%', y: '70%' },
-];
-
 const currency = (value) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
 const apiUrl = import.meta.env.VITE_API_URL || '/api';
@@ -51,7 +21,12 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [saldo, setSaldo] = useState(0);
   const [cart, setCart] = useState([]);
-  const [selectedWaste, setSelectedWaste] = useState(wasteCatalog[0]);
+  const [catalog, setCatalog] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [dropoffLocations, setDropoffLocations] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState([]);
+  const [impact, setImpact] = useState({ carbonAvoidedKg: 0, equivalentTrees: 0, landfillReductionKg: 0 });
+  const [selectedWaste, setSelectedWaste] = useState(null);
   const [withdrawMessage, setWithdrawMessage] = useState('');
   const [authMode, setAuthMode] = useState(null);
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
@@ -59,6 +34,27 @@ export default function App() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('revalue_user')); } catch { return null; }
   });
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/catalog').then((response) => response.json()),
+      fetch('/api/products').then((response) => response.json()),
+      fetch('/api/dropoffs').then((response) => response.json()),
+      fetch('/api/dashboard', { headers: { Authorization: `Bearer ${localStorage.getItem('revalue_token') || ''}` } }).then((response) => response.json()),
+    ]).then(([catalogData, productData, dropoffData, dashboardData]) => {
+      setCatalog(catalogData.items || []);
+      setProducts(productData.products || []);
+      setDropoffLocations(dropoffData.locations || []);
+      setDashboardStats(dashboardData.stats || []);
+      setImpact(dashboardData.impact || { carbonAvoidedKg: 0, equivalentTrees: 0, landfillReductionKg: 0 });
+      setSelectedWaste((catalogData.items || [])[0] || null);
+    }).catch(() => {
+      setCatalog([]);
+      setProducts([]);
+      setDropoffLocations([]);
+      setDashboardStats([]);
+    });
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('revalue_token');
@@ -197,32 +193,36 @@ export default function App() {
     { key: 'checkout', label: 'Checkout' },
   ];
 
+  const renderNavbar = () => (
+    <header className="topbar">
+      <button type="button" className="brand-wrap brand-button" onClick={() => setCurrentPage('dashboard')} aria-label="Kembali ke Dashboard">
+        <img className="brand-logo" src={logo} alt="Revalue" />
+      </button>
+
+      <nav className="nav-tabs" aria-label="Navigasi utama">
+        {pageNav.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={currentPage === item.key ? 'nav-active' : ''}
+            onClick={() => setCurrentPage(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="nav-tools">
+        {user ? <button type="button" className="profile-button" onClick={handleLogout}>{user.name?.split(' ')[0]} · Keluar</button> : <button type="button" className="profile-button" onClick={() => setAuthMode('login')}>Masuk</button>}
+        <button type="button" className="icon-button" aria-label="Cari"><Search size={15} /></button>
+        <button type="button" className="icon-button" aria-label="Notifikasi"><Bell size={15} /></button>
+      </div>
+    </header>
+  );
+
   const renderDashboard = () => (
     <div className="page-card shell-dashboard">
-      <header className="topbar">
-        <div className="brand-wrap">
-          <img className="brand-logo" src={logo} alt="Revalue" />
-        </div>
-
-        <nav className="nav-tabs">
-          {pageNav.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={currentPage === item.key ? 'nav-active' : ''}
-              onClick={() => setCurrentPage(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="nav-tools">
-          {user ? <button type="button" className="profile-button" onClick={handleLogout}>{user.name?.split(' ')[0]} · Keluar</button> : <button type="button" className="profile-button" onClick={() => setAuthMode('login')}>Masuk</button>}
-          <button type="button" className="icon-button"><Search size={15} /></button>
-          <button type="button" className="icon-button"><Bell size={15} /></button>
-        </div>
-      </header>
+      {renderNavbar()}
 
       <main className="dashboard-main">
         <section className="hero-panel">
@@ -260,25 +260,29 @@ export default function App() {
         <section className="stats-row">
           <div className="panel-card chart-card">
             <div className="card-title">Dashboard Dampak Lingkungan</div>
-            <div className="chart-box">
-              {dashboardStats.map((item) => (
-                <div key={item.label} className="chart-col">
-                  <div className={`bar bar-${item.tone}`} style={{ height: `${item.value}%` }} />
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
+            {dashboardStats.length === 0 ? (
+              <div className="chart-empty">Belum ada transaksi selesai untuk dihitung.</div>
+            ) : (
+              <div className="chart-box">
+                {dashboardStats.map((item) => (
+                  <div key={item.label} className="chart-col">
+                    <div className={`bar bar-${item.tone}`} style={{ height: `${item.value}%` }} />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="panel-card impact-card">
             <div className="card-title">Carbon Offset Calculator</div>
             <div className="impact-box">
               <p>Total Karbon Terhindar:</p>
-              <strong>50 kg <small>CO2e</small></strong>
+              <strong>{impact.carbonAvoidedKg.toFixed(1)} kg <small>CO2e</small></strong>
             </div>
             <div className="impact-meta">
-              <span>Pohon Setara: 2.5</span>
-              <span>TPA: Terreduksi</span>
+              <span>Pohon Setara: {impact.equivalentTrees.toFixed(1)}</span>
+              <span>TPA: {impact.landfillReductionKg.toFixed(1)} kg</span>
             </div>
           </div>
         </section>
@@ -288,20 +292,7 @@ export default function App() {
 
   const renderSetoran = () => (
     <div className="page-card shell-light">
-      <header className="topbar slim">
-        <div className="brand-wrap">
-          <img className="brand-logo" src={logo} alt="Revalue" />
-        </div>
-
-        <div className="subnav">
-          <button type="button" className="subnav-pill active">Setoran</button>
-          <button type="button" className="subnav-pill" onClick={() => setCurrentPage('map')}>Lokasi</button>
-        </div>
-
-        <div className="nav-tools">
-          <button type="button" className="icon-button"><Wallet size={15} /></button>
-        </div>
-      </header>
+      {renderNavbar()}
 
       <main className="setoran-page">
         <div className="section-head">
@@ -313,10 +304,10 @@ export default function App() {
         </div>
 
         <div className="waste-grid">
-          {wasteCatalog.map((item) => (
+          {catalog.length === 0 ? <div className="empty-box">Belum ada katalog sampah di database.</div> : catalog.map((item) => (
             <article
               key={item.id}
-              className={`waste-card ${selectedWaste.id === item.id ? 'selected' : ''}`}
+              className={`waste-card ${selectedWaste?.id === item.id ? 'selected' : ''}`}
               onClick={() => setSelectedWaste(item)}
             >
               <span className="waste-tag">{item.category}</span>
@@ -339,20 +330,7 @@ export default function App() {
 
   const renderMap = () => (
     <div className="page-card shell-light">
-      <header className="topbar slim">
-        <div className="brand-wrap">
-          <img className="brand-logo" src={logo} alt="Revalue" />
-        </div>
-
-        <div className="subnav">
-          <button type="button" className="subnav-pill" onClick={() => setCurrentPage('setoran')}>Setoran</button>
-          <button type="button" className="subnav-pill active">Drop-off</button>
-        </div>
-
-        <div className="nav-tools">
-          <button type="button" className="icon-button"><Search size={15} /></button>
-        </div>
-      </header>
+      {renderNavbar()}
 
       <main className="map-page">
         <div className="map-toolbar">
@@ -387,20 +365,7 @@ export default function App() {
 
   const renderMarketplace = () => (
     <div className="page-card shell-light">
-      <header className="topbar slim">
-        <div className="brand-wrap">
-          <img className="brand-logo" src={logo} alt="Revalue" />
-        </div>
-
-        <div className="subnav">
-          <button type="button" className="subnav-pill" onClick={() => setCurrentPage('dashboard')}>Home</button>
-          <button type="button" className="subnav-pill active">Marketplace</button>
-        </div>
-
-        <div className="nav-tools">
-          <button type="button" className="icon-button"><ShoppingCart size={15} /></button>
-        </div>
-      </header>
+      {renderNavbar()}
 
       <main className="market-main">
         <div className="section-head">
@@ -412,7 +377,7 @@ export default function App() {
         </div>
 
         <div className="market-grid">
-          {productCards.map((product) => (
+          {products.length === 0 ? <div className="empty-box">Belum ada produk marketplace di database.</div> : products.map((product) => (
             <article key={product.id} className={`product-card ${product.tone}`}>
               <div className="product-art"><Leaf size={24} /></div>
               <span className="product-tag">{product.tag}</span>
@@ -432,20 +397,7 @@ export default function App() {
 
   const renderCheckout = () => (
     <div className="page-card shell-light">
-      <header className="topbar slim">
-        <div className="brand-wrap">
-          <img className="brand-logo" src={logo} alt="Revalue" />
-        </div>
-
-        <div className="subnav">
-          <button type="button" className="subnav-pill" onClick={() => setCurrentPage('marketplace')}>Belanja</button>
-          <button type="button" className="subnav-pill active">Checkout</button>
-        </div>
-
-        <div className="nav-tools">
-          <button type="button" className="icon-button"><CreditCard size={15} /></button>
-        </div>
-      </header>
+      {renderNavbar()}
 
       <main className="checkout-page">
         <div className="checkout-panel">
