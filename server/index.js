@@ -38,6 +38,24 @@ const userWithTransactionBalance = async (user) => {
   const balance = Number(received._sum.totalAmount || 0) - Number(sent._sum.totalAmount || 0);
   return { ...publicUser(user), walletBalance: balance };
 };
+const serializeNumber = (value) => Number(value || 0);
+const getDashboardData = async (userId) => {
+  const transactions = await prisma.transaction.findMany({
+    where: { status: 'selesai', ...(userId ? { OR: [{ senderId: userId }, { receiverId: userId }] } : {}) },
+    include: { waste: true },
+  });
+  const categoryTotals = transactions.reduce((totals, transaction) => {
+    const category = transaction.waste.category;
+    totals[category] = (totals[category] || 0) + serializeNumber(transaction.weightKg);
+    return totals;
+  }, {});
+  const totalWeight = transactions.reduce((sum, transaction) => sum + serializeNumber(transaction.weightKg), 0);
+  const carbonAvoidedKg = transactions.reduce((sum, transaction) => sum + (serializeNumber(transaction.weightKg) * serializeNumber(transaction.waste.carbonFactorPerKg)), 0);
+  return {
+    stats: Object.entries(categoryTotals).map(([label, value]) => ({ label, value, tone: label === 'organik' ? 'emerald' : 'sky' })),
+    impact: { carbonAvoidedKg, equivalentTrees: carbonAvoidedKg / 20, landfillReductionKg: totalWeight },
+  };
+};
 const readBody = async (request) => {
   let body = '';
   for await (const chunk of request) body += chunk;
@@ -92,6 +110,52 @@ const server = createServer(async (request, response) => {
       const user = await prisma.user.findUnique({ where: { userId } });
       if (!user) return send(response, 404, { message: 'User tidak ditemukan.' });
       return send(response, 200, { user: await userWithTransactionBalance(user) });
+    }
+    if (request.method === 'GET' && request.url === '/api/catalog') {
+      const items = await prisma.wasteItem.findMany({ orderBy: { wasteId: 'asc' } });
+      return send(response, 200, { items: items.map((item) => ({
+        id: item.wasteId,
+        category: item.category,
+        name: item.typeName,
+        price: serializeNumber(item.pricePerKg),
+        unit: 'kg',
+        stockKg: serializeNumber(item.stockKg),
+        carbonFactorPerKg: serializeNumber(item.carbonFactorPerKg),
+      })) });
+    }
+    if (request.method === 'GET' && request.url === '/api/dropoffs') {
+      const locations = await prisma.dropOffLocation.findMany({ orderBy: { locationId: 'asc' } });
+      const latitudes = locations.map((location) => serializeNumber(location.latitude));
+      const longitudes = locations.map((location) => serializeNumber(location.longitude));
+      const minLat = Math.min(...latitudes);
+      const maxLat = Math.max(...latitudes);
+      const minLng = Math.min(...longitudes);
+      const maxLng = Math.max(...longitudes);
+      return send(response, 200, { locations: locations.map((location) => ({
+        id: location.locationId,
+        name: location.locationName,
+        address: location.address,
+        latitude: serializeNumber(location.latitude),
+        longitude: serializeNumber(location.longitude),
+        x: `${maxLng === minLng ? 50 : ((serializeNumber(location.longitude) - minLng) / (maxLng - minLng)) * 80 + 10}%`,
+        y: `${maxLat === minLat ? 50 : (1 - ((serializeNumber(location.latitude) - minLat) / (maxLat - minLat))) * 80 + 10}%`,
+      })) });
+    }
+    if (request.method === 'GET' && request.url === '/api/products') {
+      const products = await prisma.product.findMany({ where: { isActive: true }, orderBy: { productId: 'asc' } });
+      return send(response, 200, { products: products.map((product) => ({
+        id: product.productId,
+        name: product.name,
+        price: serializeNumber(product.price),
+        tag: product.tag || '',
+        tone: product.tone || 'green',
+      })) });
+    }
+    if (request.method === 'GET' && request.url === '/api/dashboard') {
+      const token = request.headers.authorization?.replace('Bearer ', '');
+      const userId = sessions.get(token);
+      const dashboard = await getDashboardData(userId);
+      return send(response, 200, dashboard);
     }
     return send(response, 404, { message: 'Endpoint tidak ditemukan.' });
   } catch (error) {
