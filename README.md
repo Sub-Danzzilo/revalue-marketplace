@@ -6,7 +6,7 @@ REVALUE adalah platform berbasis web yang menghubungkan masyarakat, pengepul ata
 
 ## Status Proyek
 
-Saat ini, repository ini berfokus pada frontend React + Vite. Backend dan koneksi database MySQL/Aiven dapat dikembangkan secara terpisah sesuai arsitektur yang dibutuhkan.
+Frontend React + Vite dan API autentikasi Node + Prisma sudah tersedia. Login dan register menyimpan pengguna ke MySQL melalui model `User` pada Prisma.
 
 ---
 
@@ -19,10 +19,10 @@ Saat ini, repository ini berfokus pada frontend React + Vite. Backend dan koneks
 - JavaScript
 - CSS
 
-### Backend / Database Planning
+### Backend / Database
 
 - Node.js
-- Express.js (opsional / dapat dibuat terpisah)
+- Node.js HTTP API
 - Prisma ORM
 - MySQL di Aiven
 - Dotenv
@@ -58,13 +58,25 @@ Aplikasi akan berjalan di browser pada port default Vite, biasanya:
 http://localhost:5173
 ```
 
-### 4. Build untuk production
+### 4. Konfigurasi database dan jalankan API
+
+Salin `.env.example` menjadi `.env`, lalu isi `DATABASE_URL` MySQL Anda. Setelah itu jalankan:
+
+```bash
+npx prisma generate
+npx prisma migrate deploy
+npm run server
+```
+
+API berjalan di `http://localhost:3001`. Jalankan `npm run dev` di terminal lain. Vite otomatis meneruskan request `/api` ke API tersebut.
+
+### 5. Build untuk production
 
 ```bash
 npm run build
 ```
 
-### 5. Cek kualitas kode
+### 6. Cek kualitas kode
 
 ```bash
 npm run lint
@@ -74,13 +86,11 @@ npm run lint
 
 ## Konfigurasi Environment
 
-Buat file `.env` di root project jika nanti backend atau database digunakan.
-
-Contoh:
+Gunakan `.env.example` sebagai template:
 
 ```env
-PORT=5000
 DATABASE_URL="mysql://username:password@host-aiven:port/defaultdb"
+API_PORT=3001
 ```
 
 Catatan:
@@ -97,9 +107,8 @@ Catatan:
 Jika backend akan memakai Prisma, langkah umum adalah:
 
 ```bash
-npx prisma init
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy
 ```
 
 Untuk migrasi yang lebih rapi:
@@ -112,7 +121,14 @@ Gunakan Prisma di backend, lalu frontend memanggil backend via API.
 
 ---
 
-## Struktur Project yang Disarankan
+## Endpoint Autentikasi
+
+- `POST /api/auth/register` dengan `name`, `email`, `password`
+- `POST /api/auth/login` dengan `email`, `password`
+
+Password di-hash menggunakan Node `scrypt` sebelum disimpan. Token sesi dikembalikan setelah login/register dan disimpan frontend di local storage.
+
+## Struktur Project
 
 ```text
 REVALUE/
@@ -124,7 +140,7 @@ REVALUE/
 ├── prisma/
 │   └── schema.prisma
 ├── server/
-│   └── app.js
+│   └── index.js
 └── README.md
 ```
 
@@ -139,4 +155,4 @@ REVALUE/
 
 ## Catatan
 
-README ini dibuat agar sesuai dengan kondisi repo yang saat ini ada: fokus frontend React/Vite, sementara Prisma dan MySQL/Aiven merupakan infrastruktur backend yang dapat ditambahkan sesuai kebutuhan ekosistem REVALUE.
+README ini menjelaskan frontend, API autentikasi, dan koneksi Prisma/MySQL untuk pengembangan lokal.
