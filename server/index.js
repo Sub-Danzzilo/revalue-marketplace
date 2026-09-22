@@ -52,7 +52,11 @@ const getDashboardData = async (userId) => {
   const totalWeight = transactions.reduce((sum, transaction) => sum + serializeNumber(transaction.weightKg), 0);
   const carbonAvoidedKg = transactions.reduce((sum, transaction) => sum + (serializeNumber(transaction.weightKg) * serializeNumber(transaction.waste.carbonFactorPerKg)), 0);
   return {
-    stats: Object.entries(categoryTotals).map(([label, value]) => ({ label, value, tone: label === 'organik' ? 'emerald' : 'sky' })),
+    stats: Object.entries(categoryTotals).map(([label, value]) => ({
+      label: label === 'b3' ? 'B3 Medis' : label,
+      value,
+      tone: label === 'organik' ? 'emerald' : label === 'b3' ? 'amber' : 'sky',
+    })),
     impact: { carbonAvoidedKg, equivalentTrees: carbonAvoidedKg / 20, landfillReductionKg: totalWeight },
   };
 };
@@ -116,6 +120,7 @@ const server = createServer(async (request, response) => {
       return send(response, 200, { items: items.map((item) => ({
         id: item.wasteId,
         category: item.category,
+        medicalType: item.medicalType || null,
         name: item.typeName,
         price: serializeNumber(item.pricePerKg),
         unit: 'kg',

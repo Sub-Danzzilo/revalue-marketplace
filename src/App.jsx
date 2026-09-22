@@ -16,6 +16,7 @@ import DropoffMap from './components/DropoffMap';
 
 const currency = (value) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+const categoryLabel = (category) => ({ organik: 'Organik', anorganik: 'Anorganik', b3: 'B3 Medis' }[category] || category);
 const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
 export default function App() {
@@ -316,11 +317,17 @@ export default function App() {
               className={`waste-card ${selectedWaste?.id === item.id ? 'selected' : ''}`}
               onClick={() => setSelectedWaste(item)}
             >
-              <span className="waste-tag">{item.category}</span>
+              <span className={`waste-tag ${item.category === 'b3' ? 'medical-tag' : ''}`}>{categoryLabel(item.category)}</span>
+              {item.category === 'b3' && (
+                <span className="medical-type-tag">
+                  {item.medicalType === 'sekali_pakai' ? 'Sekali pakai' : 'Dapat digunakan kembali'}
+                </span>
+              )}
               <h3>{item.name}</h3>
               <strong>
-                {item.price === 0 ? 'SOP Khusus' : `${currency(item.price)} / ${item.unit}`}
+                {item.category === 'b3' ? 'Penanganan khusus' : item.price === 0 ? 'SOP Khusus' : `${currency(item.price)} / ${item.unit}`}
               </strong>
+              {item.category === 'b3' && <p className="medical-note">Pisahkan dari sampah umum dan serahkan ke fasilitas berizin.</p>}
               <button type="button" className="mini-btn" onClick={(e) => {
                 e.stopPropagation();
                 setCurrentPage('dashboard');

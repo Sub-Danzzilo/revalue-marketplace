@@ -36,6 +36,12 @@ enum RequestStatus {
 enum WasteCategory {
   organik
   anorganik
+  b3
+}
+
+enum MedicalWasteType {
+  sekali_pakai
+  dapat_digunakan_kembali
 }
 
 // ==========================================
@@ -65,6 +71,7 @@ model WasteItem {
   wasteId           Int           @id @default(autoincrement()) @map("waste_id")
   typeName          String        @map("type_name") @db.VarChar(50)
   category          WasteCategory
+  medicalType       MedicalWasteType? @map("medical_type")
   pricePerKg        Decimal       @map("price_per_kg") @db.Decimal(10, 2)
   stockKg           Decimal       @default(0.00) @map("stock_kg") @db.Decimal(10, 2)
   carbonFactorPerKg Decimal       @map("carbon_factor_per_kg") @db.Decimal(5, 2)
