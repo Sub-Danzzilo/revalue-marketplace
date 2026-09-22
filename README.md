@@ -2,11 +2,50 @@
 
 REVALUE adalah platform berbasis web yang menghubungkan masyarakat, pengepul atau bank sampah, industri daur ulang, dan pengolah kompos untuk menciptakan ekosistem pengelolaan sampah yang lebih terintegrasi, transparan, dan berkelanjutan.
 
+Project ini menggabungkan frontend React, backend API Node.js, ORM Prisma, dan database MySQL yang di-host di Aiven. Frontend di-deploy melalui GitHub Pages, sedangkan backend API berjalan di Railway.
+
 ---
 
-## Status Proyek
+## Ringkasan Proyek
 
-Frontend React + Vite dan API autentikasi Node + Prisma sudah tersedia. Login dan register menyimpan pengguna ke MySQL melalui model `User` pada Prisma.
+REVALUE dirancang untuk membantu:
+
+- masyarakat menjual sampah atau bahan daur ulang,
+- pengepul dan bank sampah mengelola transaksi,
+- industri memperoleh kebutuhan material daur ulang,
+- pengelola kompos memantau tren dan dampak lingkungan,
+- semua pihak mengakses data secara lebih transparan.
+
+---
+
+## Fitur Utama
+
+- autentikasi pengguna dengan register dan login,
+- katalog sampah dan produk daur ulang,
+- daftar drop-off location,
+- dashboard dampak lingkungan,
+- manajemen saldo wallet pengguna,
+- skema data berbasis Prisma/MySQL.
+
+---
+
+## Arsitektur
+
+```text
+GitHub Pages  --->  Frontend React + Vite
+      |
+      v
+Railway       --->  Backend Node.js API + Prisma
+      |
+      v
+Aiven MySQL   --->  Database utama
+```
+
+Alur umum:
+
+- Frontend memanggil backend melalui endpoint API.
+- Backend mengakses database MySQL melalui Prisma.
+- Semua konfigurasi sensitif disimpan di environment variable, bukan di source code.
 
 ---
 
@@ -14,24 +53,65 @@ Frontend React + Vite dan API autentikasi Node + Prisma sudah tersedia. Login da
 
 ### Frontend
 
-- React.js
+- React
 - Vite
 - JavaScript
 - CSS
 
-### Backend / Database
+### Backend
 
 - Node.js
-- Node.js HTTP API
 - Prisma ORM
-- MySQL di Aiven
+- MySQL
 - Dotenv
 
-> Prisma dan MySQL sebaiknya digunakan di backend, bukan langsung dari frontend React.
+### Platform Deployment
+
+- GitHub Pages untuk frontend
+- Railway untuk backend
+- Aiven untuk MySQL
 
 ---
 
-## Cara Menjalankan Proyek
+## Struktur Project
+
+```text
+REVALUE/
+├── src/
+│   ├── App.jsx
+│   ├── components/
+│   ├── assets/
+│   └── index.css
+├── public/
+├── server/
+│   └── index.js
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+├── .github/
+│   └── workflows/
+├── package.json
+├── vite.config.js
+├── .env
+├── .gitignore
+├── README.md
+└── index.html
+```
+
+---
+
+## Persyaratan
+
+Sebelum menjalankan project, pastikan perangkat Anda sudah memiliki:
+
+- Node.js 18+
+- npm
+- akses ke database MySQL Aiven
+- akses ke Railway dan GitHub Pages bila ingin deploy
+
+---
+
+## Setup Lokal
 
 ### 1. Clone repository
 
@@ -40,43 +120,68 @@ git clone git@github.com:Sub-Danzzilo/revalue-marketplace.git
 cd revalue-marketplace
 ```
 
-### 2. Install dependency
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Jalankan frontend di mode development
+### 3. Siapkan environment variable
+
+Buat file `.env` kemudian isi:
+
+```env
+DATABASE_URL="mysql://username:password@host-aiven:port/defaultdb?sslaccept=accept_invalid_certs"
+FRONTEND_URL="http://localhost:5173"
+API_PORT=3001
+```
+
+> Simpan secret di environment variable, bukan di source code. Pastikan credential valid dan aman.
+
+### 4. Jalankan Prisma generate dan migrate
+
+```bash
+npx prisma generate
+npx prisma migrate deploy
+```
+
+### 5. Jalankan backend API
+
+```bash
+npm run server
+```
+
+Backend akan berjalan di:
+
+```text
+http://localhost:3001
+```
+
+### 6. Jalankan frontend
+
+Di terminal terpisah:
 
 ```bash
 npm run dev
 ```
 
-Aplikasi akan berjalan di browser pada port default Vite, biasanya:
+Frontend akan berjalan di:
 
 ```text
 http://localhost:5173
 ```
 
-### 4. Konfigurasi database dan jalankan API
+---
 
-Salin `.env.example` menjadi `.env`, lalu isi `DATABASE_URL` MySQL Anda. Setelah itu jalankan:
+## Build Production
 
-```bash
-npx prisma generate
-npx prisma migrate deploy
-npm run server
-```
-
-API berjalan di `http://localhost:3001`. Jalankan `npm run dev` di terminal lain. Vite otomatis meneruskan request `/api` ke API tersebut.
-
-### 5. Build untuk production
+Untuk build frontend untuk production:
 
 ```bash
 npm run build
 ```
 
-### 6. Cek kualitas kode
+Untuk validasi kualitas kode:
 
 ```bash
 npm run lint
@@ -84,64 +189,111 @@ npm run lint
 
 ---
 
-## Konfigurasi Environment
+## Prisma dan Database
 
-Gunakan `.env.example` sebagai template:
+Project ini menggunakan Prisma sebagai ORM untuk MySQL.
 
-```env
-DATABASE_URL="mysql://username:password@host-aiven:port/defaultdb"
-API_PORT=3001
-```
+### Perintah umum
 
-Catatan:
-
-- `DATABASE_URL` digunakan untuk koneksi backend ke MySQL Aiven.
-- Jangan menaruh koneksi database langsung di frontend.
-- Gunakan variabel environment untuk backend saja.
-- Minta file `.env` ke Muhammad Riski, karena isi `.env` diatas cuma contoh.
-
----
-
-## Prisma + MySQL Aiven
-
-Jika backend akan memakai Prisma, langkah umum adalah:
+Generate client Prisma:
 
 ```bash
 npx prisma generate
+```
+
+Apply migration yang sudah ada:
+
+```bash
 npx prisma migrate deploy
 ```
 
-Untuk migrasi yang lebih rapi:
+Buat migration baru saat mengubah schema:
 
 ```bash
-npx prisma migrate dev --name init_revalue_schema
+npx prisma migrate dev --name nama_migration
 ```
 
-Gunakan Prisma di backend, lalu frontend memanggil backend via API.
+### Catatan penting
+
+- `DATABASE_URL` harus mengarah ke database yang valid.
+- Migrasi hanya dijalankan di backend environment.
+- Jangan menaruh credential database di frontend.
 
 ---
 
-## Endpoint Autentikasi
+## Deployment
 
-- `POST /api/auth/register` dengan `name`, `email`, `password`
-- `POST /api/auth/login` dengan `email`, `password`
+### Frontend (GitHub Pages)
 
-Password di-hash menggunakan Node `scrypt` sebelum disimpan. Token sesi dikembalikan setelah login/register dan disimpan frontend di local storage.
+Frontend di-deploy ke GitHub Pages dengan environment variable:
 
-## Struktur Project
+```env
+VITE_API_URL=https://domain-backend-railway.up.railway.app/api
+```
+
+Workflow deployment berada di:
 
 ```text
-REVALUE/
-├── src/
-├── public/
-├── package.json
-├── vite.config.js
-├── .env
-├── prisma/
-│   └── schema.prisma
-├── server/
-│   └── index.js
-└── README.md
+.github/workflows/deploy-pages.yml
+```
+
+### Backend (Railway)
+
+Backend API di-deploy di Railway dengan variable:
+
+```env
+DATABASE_URL="mysql://username:password@host-aiven:port/defaultdb?sslaccept=accept_invalid_certs"
+FRONTEND_URL="https://username.github.io/revalue-marketplace/"
+PORT=8080
+```
+
+Start command yang dipakai:
+
+```bash
+npm start
+```
+
+Di `package.json`, script start sudah diatur untuk mengeksekusi migrasi sebelum menjalankan API:
+
+```json
+"start": "npx prisma migrate deploy && npm run server"
+```
+
+---
+
+## Endpoint API
+
+### Health check
+
+```http
+GET /api/health
+```
+
+Response contoh:
+
+```json
+{
+  "status": "ok",
+  "message": "Revalue API aktif."
+}
+```
+
+### Autentikasi
+
+```http
+POST /api/auth/register
+POST /api/auth/login
+GET /api/me
+```
+
+Body register/login biasanya berisi:
+
+```json
+{
+  "name": "User",
+  "email": "user@email.com",
+  "password": "password123"
+}
 ```
 
 ---
@@ -155,4 +307,10 @@ REVALUE/
 
 ## Catatan
 
-README ini menjelaskan frontend, API autentikasi, dan koneksi Prisma/MySQL untuk pengembangan lokal.
+README ini dibuat untuk memudahkan pengembangan lokal, testing, dan deployment aplikasi secara konsisten. Semua konfigurasi sensitif harus disimpan sebagai environment variable dan tidak dipublikasikan ke repositori publik.
+
+---
+
+## Lisensi
+
+Project ini dibuat untuk kebutuhan internal tim dan keperluan demo/pengembangan proyek. Silakan sesuaikan lisensi apabila project akan dipublikasikan secara luas.
