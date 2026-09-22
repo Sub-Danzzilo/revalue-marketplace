@@ -6,7 +6,7 @@ import 'dotenv/config';
 
 const prisma = new PrismaClient();
 const sessions = new Map();
-const port = Number(process.env.API_PORT || 3001);
+const port = Number(process.env.PORT || process.env.API_PORT || 3001);
 const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
 const send = (response, status, body, extraHeaders = {}) => {
   response.writeHead(status, {

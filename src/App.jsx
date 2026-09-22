@@ -40,10 +40,10 @@ export default function App() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/catalog').then((response) => response.json()),
-      fetch('/api/products').then((response) => response.json()),
-      fetch('/api/dropoffs').then((response) => response.json()),
-      fetch('/api/dashboard', { headers: { Authorization: `Bearer ${localStorage.getItem('revalue_token') || ''}` } }).then((response) => response.json()),
+      fetch(`${apiUrl}/catalog`).then((response) => response.json()),
+      fetch(`${apiUrl}/products`).then((response) => response.json()),
+      fetch(`${apiUrl}/dropoffs`).then((response) => response.json()),
+      fetch(`${apiUrl}/dashboard`, { headers: { Authorization: `Bearer ${localStorage.getItem('revalue_token') || ''}` } }).then((response) => response.json()),
     ]).then(([catalogData, productData, dropoffData, dashboardData]) => {
       setCatalog(catalogData.items || []);
       setProducts(productData.products || []);
